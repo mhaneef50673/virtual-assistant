@@ -1,0 +1,176 @@
+<%@ include file="header.jsp"%>
+
+<link href="<c:url value="css/fileupload.css" />" rel="stylesheet"
+	type="text/css" />
+<script type="text/javascript" src="js/jquery.form.js"></script>
+
+
+<div >
+
+<span>
+
+            <h3>    A single aiml file or csv file can be uploaded </h3>
+            
+
+</span>
+</div>
+
+<form id="UploadForm" action="save?node=aiml&deleteall=true"
+	method="post" enctype="multipart/form-data">
+	<input type="file" id="myfile" name="myfile"> <br></br> 
+
+    <span>rate</span>
+    <input id="rate" type="text" pattern="^\d+$" title="Documents given high priority based on the rate value" placeholder="high priority based on the rate value" style="width: 400px">
+
+	<br></br> 
+	<label >Type: </label>
+		<input type="radio" name="nodetype" value="faq" checked="checked">Faq</input>
+        <input type="radio" name="nodetype" value="salutations" >Salutations</input>
+		
+		<br></br>
+	<input type="submit" value="Delete previous matched type and Save"
+		id="deleteallsavebtn"> 
+	
+		<input type="submit" value="Append and Save"
+		 id="savebtn">
+
+	<div id="progressbox">
+		<div id="progressbar"></div>
+		<div id="percent">0%</div>
+	</div>
+	<br />
+
+<div>
+	<div id="message">
+	</div>
+	<textarea id="statstextarea" style="width: 60%;height:300px">
+    </textarea>
+ </div>   
+</form>
+
+
+<script>
+
+var statsTextArea;
+var myFileObj;
+var rateTextInput;
+
+$(document).ready(function() {
+	
+	statsTextArea = $('#statstextarea');
+	myFileObj = $('#myfile');
+	rateTextInput =  $('#rate');
+	statsTextArea.hide();
+	
+	 $("#deleteallsavebtn").on("click", function (e) {
+         e.preventDefault();
+         var nodeval = getNodeType();
+         submitForm("save?node="+nodeval+"&deleteall=true&rate="+rateTextInput.val());
+     });
+	 
+	  $("#savebtn").on("click", function (e) {
+          e.preventDefault();
+          var nodeval = getNodeType();
+          submitForm("save?node="+nodeval+"&deleteall=false&rate="+rateTextInput.val());
+      });
+	  
+	  function submitForm(url){
+		  $('#UploadForm').attr('action', url).submit();
+	  }
+	  
+	  
+	  function getNodeType(){
+		  
+		  var radios = document.getElementsByName('nodetype');
+
+		  for (var i = 0, length = radios.length; i < length; i++) {
+		      if (radios[i].checked) {
+		          return radios[i].value;
+		      }
+		  }
+		  
+		  return "va";
+	  }
+
+	  
+ function validateFile()
+ {
+     if (myFileObj.val() == '')
+     {
+         alert('No file(s) selected. Please choose a AIML file to upload.');
+         return false;
+     }
+     if (myFileObj.val() != '')
+     {
+         var ext = myFileObj.val().split('.').pop().toLowerCase();
+         if($.inArray(ext, ['aiml','csv']) == -1) 
+         {
+             alert('Invalid file type. Please choose a AIML file to upload.');
+             return false;
+         }
+     }
+     
+     var integerRegex = /^\d+$/;
+ 	
+ 	if(!integerRegex.test(rateTextInput.val()))
+ 	{
+ 		alert('rate value is invalid , type only numbers eg : 1 or 2');
+ 		return false;
+ 	}
+ 	
+ 	console.log("regex test "+integerRegex.test(rateTextInput.val()));
+ 	
+     return true;
+ }
+
+	var options = {
+		beforeSend : function() {
+			$("#progressbox").show();
+			// clear everything
+			$("#progressbar").width('0%');
+			$("#message").empty();
+			$("#percent").html("0%");
+			statsTextArea.hide();
+		},
+		uploadProgress : function(event, position, total, percentComplete) {
+			$("#progressbar").width(percentComplete + '%');
+			$("#percent").html(percentComplete + '%');
+
+			// change message text and % to red after 50%
+			if (percentComplete > 50) {
+				$("#message").html("<font color='red'>File Upload is in progress .. </font>");
+			}
+		},
+		success : function(data) {
+			
+			var response = JSON.parse(data);
+			var msg="";
+			
+			if(response.status=="saved")
+				msg = "Data Successfully Uploaded!";
+			else
+			    msg = "Oops! Data Not Saved in Server!";
+			
+			$("#progressbar").width('100%');
+			$("#percent").html('100%');
+			$("#message").html("<font color='blue'>"+msg+"</font>");
+			
+			statsTextArea.show();
+			statsTextArea.text(response.stats);
+			
+		},
+		complete : function(response) {
+			
+		},
+		error : function(xhr, status, error) {
+			$("#message").html("<font color='red'> ERROR: unable to upload files</font>");
+		},
+		beforeSubmit:  validateFile
+	};
+	$("#UploadForm").ajaxForm(options);
+	});
+
+</script>
+
+
+<%@ include file="footer.jsp"%>

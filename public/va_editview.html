@@ -1,0 +1,156 @@
+<%@ include file="header.jsp" %>
+
+ 
+<link href="<c:url value="css/jseditorstyle.css" />" rel="stylesheet"  type="text/css" />
+
+<script type="text/javascript" src="<c:url value="js/jsFormCreator.js" />"></script>
+
+
+<script>
+
+var displayDelayInMilliSec = 3000;
+var delayIntervalId;
+
+$(document).ready(function() {
+	jR.init();
+	
+	jR.covertJsonToForm= function() {
+		
+		jR.jsonToForm();
+		$("#savebtn").css("display","inline");
+		setMsg("");
+		
+	};
+	
+	
+	
+	jR.onErrorCallBack =function (errorMsg){
+
+		$("#savebtn").css("display", "none");
+		setMsg(errorMsg,"error");
+		
+	}
+	
+	function setMsg(message,type){
+		
+		var statusSpan = $("#statusSpan");
+		statusSpan.addClass("label label-primary");
+		
+		switch(type){
+		case "error":
+			$("#statusSpan").addClass("label label-danger");
+			break;
+		
+		  case "saved":
+		  case "success":
+			  $("#statusSpan").addClass("label label-success");
+			  break;	  
+		}
+		
+		statusSpan.text(message);	
+		
+		if(message.length==0)
+			statusSpan.removeClass(statusSpan.attr("class"));	
+	}
+	
+	
+	function delayedHideMsgSpan(){
+		setMsg("");	
+		clearInterval(delayIntervalId);
+		$('#savebtn').attr('disabled' , false);
+	}
+
+	function importData(){
+		
+		var url = 'import?node=va';
+		
+		$.ajax({
+			type: 'GET',
+			url: url,
+			contentType: "application/json", 
+			dataType: "text",
+			error: function(xhr, status, error) {
+				$("#jsonTEXTAREA").val("Sorry Cannot Import Data");
+			},
+			success: function(data) { 
+				$("#jsonTEXTAREA").val(data);
+				
+				console.log(data);
+				jR.covertJsonToForm();
+				
+				data = JSON.parse(data);
+				
+				var str = JSON.stringify(data, undefined, 2);
+				
+				$("#jsonTEXTAREA").val(str);
+				
+			}
+		});
+		
+	}
+	
+
+	jR.saveJSData = function(){
+		
+		jR.formToJson(1); 
+		
+		$('#savebtn').attr('disabled' , true);
+	
+		if(jR.json_obj!=null){
+			
+	        setMsg("Please Wait...");
+	        
+			var url = 'save?node=va&deleteall=true';
+			
+			$.ajax({
+				type: 'POST',
+				url: url,
+				data : JSON.stringify(jR.json_obj),
+				contentType: "application/json", 
+				dataType: "text",
+				error: function(xhr, status, error) {
+					setMsg("Error Occured! Could not send Data","error");
+					setTimeout(delayedHideMsgSpan,displayDelayInMilliSec);
+				},
+				success: function(data) { 
+					
+					var response = JSON.parse(data);
+					
+					if(response.status=="saved")
+						setMsg("Data Successfully Uploaded!",response.status);
+					else
+					    setMsg("Oops! Data Not Saved in Server!",response.status);
+					
+					delayIntervalId = setTimeout(delayedHideMsgSpan,displayDelayInMilliSec);
+				}
+			});
+			
+			
+		}
+	}
+	
+	importData();
+
+});
+
+</script>
+
+<textarea id="jsonTEXTAREA" cols="120" rows="30">{
+}</textarea>
+<br/>
+<input type="button" class="buttonINPUT" onclick="jR.covertJsonToForm();" value="Convert to Form"/>
+<input id="savebtn" type="button" class="buttonINPUT" style="display:none; "  onclick="jR.saveJSData();" value="Save Data"/>
+<span id="statusSpan" > </span>
+<br/>
+<br/>
+
+<div id="jsonFormDIV">
+</div>
+
+<div id="messageDIV" class="messageCloseDIV " style="display:none; ">
+	<img id="messageCloseIMG" src="img/popupClose.gif" onclick="jR.messageClose(); " title="Close">
+	<div id="messageContentDIV"></div>
+</div>
+
+
+<%@ include file="footer.jsp" %>
