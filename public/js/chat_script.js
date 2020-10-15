@@ -758,7 +758,7 @@ function parseMoreInfoUrl(content){
 function getSpelledResponse(content){
 	
 	
-	return getWrappedTag(content,"<ul class='url-list'><li><h4>Emirates Agent</h4></li>",recommendationURLWrapper);
+	return getWrappedTag(content,"<ul class='url-list'><li><h4>Agent</h4></li>",recommendationURLWrapper);
 }
 
 function updateAvatarEmotion(emotion){
